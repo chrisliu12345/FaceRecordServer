@@ -442,7 +442,7 @@ public class ConfigController {
         HSSFSheet sheet = wb.createSheet("考勤记录导出");
         //sheet.autoSizeColumn(1);
         for (int i = 0; i <= 5; i++) {
-            sheet.setColumnWidth(i,5000);
+            sheet.setColumnWidth(i,3000);
         }
 
         HSSFCellStyle style = wb.createCellStyle();
@@ -458,47 +458,50 @@ public class ConfigController {
         encoder_group1.setCellValue("所属部门");
         HSSFCell encoder_name1 = head.createCell(1);
         encoder_name1.setCellValue("人员姓名");
-        HSSFCell encoder_channel1 = head.createCell(2);
-        encoder_channel1.setCellValue("上班时间");
-        HSSFCell encoder_channel2 = head.createCell(3);
-        encoder_channel2.setCellValue("下班时间");
-        HSSFCell encoder_channel3 = head.createCell(4);
-        encoder_channel3.setCellValue("备注");
-        HSSFCell encoder_channel4 = head.createCell(5);
+        HSSFCell encoder_channel4 = head.createCell(2);
         encoder_channel4.setCellValue("记录时间");
+        HSSFCell encoder_channel1 = head.createCell(3);
+        encoder_channel1.setCellValue("上班时间");
+        HSSFCell encoder_channel2 = head.createCell(4);
+        encoder_channel2.setCellValue("下班时间");
+       /* HSSFCell encoder_channel3 = head.createCell(4);
+        encoder_channel3.setCellValue("备注");
+       */
         //组的树结构组装开始
 
         List<Record> dataList=this.configService.downLoadData(map);
+        SimpleDateFormat format=new SimpleDateFormat("HH:mm:ss");
        for(int i=0;i<dataList.size();i++){
+           System.out.println((i%4==0)&&(i/4)%2==0);
             HSSFRow heads = sheet.createRow(i+1);
-
            HSSFCell group = heads.createCell(0);
-           group.setCellValue(dataList.get(i).getParentorg()+"-"+dataList.get(i).getOrg());
+           group.setCellValue(dataList.get(i).getOrg());
             HSSFCell name = heads.createCell(1);
             name.setCellValue(dataList.get(i).getRealName());
-            HSSFCell id = heads.createCell(2);
+           HSSFCell id4 = heads.createCell(2);
+           id4.setCellValue(dataList.get(i).getCreateTime().toString());
+            HSSFCell id = heads.createCell(3);
             if(dataList.get(i).getClockIn()==null){
                 id.setCellValue(" ");
             }else{
-                id.setCellValue(dataList.get(i).getClockIn().toString().substring(
-                        0,dataList.get(i).getClockIn().toString().length()-2));
+                id.setCellValue(format.format(dataList.get(i).getClockIn().getTime()));
             }
 
-           HSSFCell id2 = heads.createCell(3);
+           HSSFCell id2 = heads.createCell(4);
            if(dataList.get(i).getClockOff()==null){
                id2.setCellValue(" ");
            }else{
-               id2.setCellValue(dataList.get(i).getClockOff().toString().substring(
-                       0,dataList.get(i).getClockOff().toString().length()-2));
+             /*  id2.setCellValue(dataList.get(i).getClockOff().toString().substring(
+                       0,dataList.get(i).getClockOff().toString().length()-2));*/
+             id2.setCellValue(format.format(dataList.get(i).getClockOff().getTime()));
            }
-           HSSFCell id3 = heads.createCell(4);
+          /* HSSFCell id3 = heads.createCell(4);
           if(dataList.get(i).getAttendanceFlag()==null){
               id3.setCellValue(" ");
           }else{
               id3.setCellValue(dataList.get(i).getAttendanceFlag());
-          }
-           HSSFCell id4 = heads.createCell(5);
-          id4.setCellValue(dataList.get(i).getCreateTime().toString());
+          }*/
+
         }
         File path = new File( path2);
         if (!path.exists()) {
@@ -510,7 +513,6 @@ public class ConfigController {
             wb.write(fileout);
             fileout.flush();
             fileout.close();
-            System.out.println(path1);
         } catch (Exception ex) {
             ex.printStackTrace();
         }

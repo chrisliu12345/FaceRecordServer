@@ -109,7 +109,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                         "/api/hello/hello",
                         "/userExcel/downloadFile",
                         "/config/downloadFile",
-                        "/common/delete/*",
+                        "/common/**",
                          "/user/CsResult/*/*",
                         "/query/url",
                         "/config/exportCameraLocation"

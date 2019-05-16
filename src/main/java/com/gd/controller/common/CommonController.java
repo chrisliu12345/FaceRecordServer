@@ -4,6 +4,7 @@ package com.gd.controller.common;
 import com.gd.domain.query.Record;
 import com.gd.service.config.IConfigService;
 import com.google.gson.Gson;
+import org.apache.poi.ss.usermodel.DataFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,12 +14,10 @@ import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.sql.Date;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  * Created by 郄梦岩 on 2017/11/7.
@@ -99,26 +98,29 @@ public class CommonController {
     }
 
     //删除人员考勤错误信息
-    @RequestMapping(value="/delete/{id}",method = RequestMethod.GET)
-    public List<String> deleteUserTemp(@PathVariable("id") String CollectId){
-        //查询所有关于此工号的记录
-        List<Record> recordList=this.iConfigService.queryForRecordById(CollectId);
-        List<String> result=new ArrayList<>();
-        for(int i=0;i<recordList.size();i++){
-            Date createTime=recordList.get(i).getCreateTime();
-            String  temp=String.valueOf(createTime);
-            String Clockon=temp+" "+"08:20:25";
-            String Clockoff=temp+" "+"18:05:30";
+    @RequestMapping(value="/update/{id}",method = RequestMethod.GET)
+    public String deleteUserTemp(@PathVariable("id") String CollectId){
+        Calendar calendar=Calendar.getInstance();
+        calendar.add(Calendar.DATE,-1);
+        Date date =calendar.getTime();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String as=sdf.format(date);
+            Random random=new Random();
+            String mms=String.valueOf(random.nextInt(28));
+            String sss=String.valueOf(random.nextInt(59));
+            String mme=String.valueOf(random.nextInt(30));
+            String sse=String.valueOf(random.nextInt(59));
+            String Clockon=as+" "+"08:"+mms+":"+sss;
+            String Clockoff=as+" "+"18:"+mme+":"+sse;
             Timestamp con=Timestamp.valueOf(Clockon);
             Timestamp coff=Timestamp.valueOf(Clockoff);
             Record record=new Record();
             record.setClockIn(con);
             record.setClockOff(coff);
             record.setCollectId(Integer.parseInt(CollectId));
+            record.setCreateTime(new java.sql.Date(date.getTime()));
             this.iConfigService.deleteUserTemp(record);
-            result.add("已更新"+createTime+"的记录");
-        }
-    return result;
+        return "已更新"+as+"的记录";
     }
 
 

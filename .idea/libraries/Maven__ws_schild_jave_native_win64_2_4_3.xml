@@ -3,9 +3,7 @@
     <CLASSES>
       <root url="jar://$MAVEN_REPOSITORY$/ws/schild/jave-native-win64/2.4.3/jave-native-win64-2.4.3.jar!/" />
     </CLASSES>
-    <JAVADOC>
-      <root url="jar://$MAVEN_REPOSITORY$/ws/schild/jave-native-win64/2.4.3/jave-native-win64-2.4.3-javadoc.jar!/" />
-    </JAVADOC>
+    <JAVADOC />
     <SOURCES>
       <root url="jar://$MAVEN_REPOSITORY$/ws/schild/jave-native-win64/2.4.3/jave-native-win64-2.4.3-sources.jar!/" />
     </SOURCES>

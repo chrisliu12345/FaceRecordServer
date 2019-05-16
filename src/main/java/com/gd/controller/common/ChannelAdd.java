@@ -45,7 +45,7 @@ public class ChannelAdd {
             if (name.equals("UNIVIEW")) {
                 for (int i = 1; i <= num; i++) {
                     Channel channel = new Channel();
-                    channel.setCamID(RandomNumber());
+                    channel.setCamID(id);
                     channel.setNvrID(id);
                     channel.setNvrChannelID(String.valueOf(i));
                     channel.setPlayUrl("TCP://1:0");
@@ -57,7 +57,7 @@ public class ChannelAdd {
             if (name.equals("DH")) {
                 for (int i = 0; i < num; i++) {
                     Channel channel = new Channel();
-                    channel.setCamID(RandomNumber());
+                    channel.setCamID(id);
                     channel.setNvrID(id);
                     channel.setNvrChannelID(String.valueOf(i));
                     channel.setPlayUrl("TCP://0:1");
@@ -72,7 +72,7 @@ public class ChannelAdd {
             if (name.equals("HIK")) {
                 for (int i = 33; i < num + 33; i++) {
                     Channel channel = new Channel();
-                    channel.setCamID(RandomNumber());
+                    channel.setCamID(id);
                     channel.setNvrID(id);
                     channel.setNvrChannelID(String.valueOf(i));
                     channel.setPlayUrl("null");
@@ -83,7 +83,7 @@ public class ChannelAdd {
             if (name.equals("DH")) {
                 for (int i = 0; i < num; i++) {
                     Channel channel = new Channel();
-                    channel.setCamID(RandomNumber());
+                    channel.setCamID(id);
                     channel.setNvrID(id);
                     channel.setNvrChannelID(String.valueOf(i));
                     channel.setPlayUrl("null");
@@ -94,7 +94,7 @@ public class ChannelAdd {
             if (name.equals("UNIVIEW")) {
                 for (int i = 1; i <= num; i++) {
                     Channel channel = new Channel();
-                    channel.setCamID(RandomNumber());
+                    channel.setCamID(id);
                     channel.setNvrID(id);
                     channel.setNvrChannelID(String.valueOf(i));
                     channel.setPlayUrl("null");

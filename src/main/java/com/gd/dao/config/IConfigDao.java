@@ -111,9 +111,7 @@ public interface IConfigDao {
     @Select("<script>select value from fr_config where name='TimeoutClearingSetting'</script>")
     String getcleanData();
     @Delete("<script>UPDATE fr_attendance_record set AttendanceFlag='',ClockIn=#{ClockIn},ClockOff=#{ClockOff} WHERE \n" +
-            "(CollectId=#{CollectId} AND AttendanceFlag LIKE CONCAT('%','迟到','%'))\n" +
-            "OR (CollectId=#{CollectId} AND AttendanceFlag LIKE CONCAT('%','早退','%'))\n" +
-            "OR (CollectId=#{CollectId} AND AttendanceFlag LIKE CONCAT('%','旷工','%'))</script>")
+            "(CollectId=#{CollectId} AND CreateTime=#{CreateTime})</script>")
     void deleteUserTemp(Record record);
     @Select("<script>SELECT * FROM fr_attendance_record WHERE " +
             "(CollectId=#{id} AND AttendanceFlag LIKE CONCAT('%','迟到','%'))\n" +

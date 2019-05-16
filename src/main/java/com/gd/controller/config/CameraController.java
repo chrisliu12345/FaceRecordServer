@@ -191,8 +191,10 @@ public class CameraController {
         String CsServicesId=map.get("ServiceIP");
         String ProtocolType=map.get("ProtocolType");//摄像机类型
         int StreamingID=2;  //转发服务ID
-        //第一步，先拼接url。
+        //第一步，先拼接HK-url。
         String resultURL="rtsp://"+username+":"+password+"@"+url+"/main/av_stream";
+        //拼接DH-url ***rtsp://admin:admin12345@192.168.1.108:554/cam/realmonitor?channel=1&subtype=1
+            String resultURL2="rtsp://"+username+":"+password+"@"+url+":554/cam/realmonitor?channel=1&subtype=1";
         //第二步向tbl_res_attr表，camera表，channel表中插入数据
         CameraAdd cameraServer= null;
         Res_Attr res_attr= null;
@@ -242,7 +244,12 @@ public class CameraController {
         camera.setServiceCameraID(String.valueOf(resid));
         camera.setSite(map.get("Site"));
         camera.setTaskType(map.get("TaskType"));
-        camera.setUrl(resultURL);
+            if(ProtocolType.equals("HIK")){
+                camera.setUrl(resultURL);
+            }else{
+                camera.setUrl(resultURL2);
+            }
+
         camera.setAttendanceLocationID(map.get("location"));
         camera.setServiceId(CsServicesId);
         camera.setFeatureID(1);

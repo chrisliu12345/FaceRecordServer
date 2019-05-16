@@ -53,6 +53,19 @@ public class UserController_Adds {
     private String path2;
     @Value("${zip.encoding}")
     private String encode;
+
+    //第一步，将用户部门和考勤地点存到临时表中
+    @RequestMapping(value = "/userSession", method = RequestMethod.POST)
+    public void getUserSession(@RequestBody Map<String, Object> map) {
+        String autoGraph = map.get("autoGraph").toString();
+        String orgid = map.get("orgId").toString();
+        String type = map.get("type").toString();
+        ImportUser importUser = new ImportUser();
+        importUser.setOrgId(Integer.parseInt(orgid));
+        importUser.setPlaceId(Integer.parseInt(autoGraph));
+        importUser.setType(Integer.parseInt(type));
+        this.userInfoService.ImportUserTemp(importUser);
+    }
     //下载文件模板
     @RequestMapping(value = "/downloadFile")
     public void downloadMcode(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException {
@@ -164,7 +177,7 @@ public class UserController_Adds {
         return null;
     }
 
-    //照片批量上传
+    //第二步，照片批量上传
     @RequestMapping(value = "/userPicImport", method = RequestMethod.POST)
     @ResponseBody
     public String uploadPicture(HttpServletRequest request, HttpServletResponse res) throws Exception {
@@ -227,89 +240,173 @@ public class UserController_Adds {
         ZipFile zip = new ZipFile(zipFile, "GBK");
 
         for (Enumeration entries = zip.getEntries(); entries.hasMoreElements(); ) {
-            ZipEntry entry = (ZipEntry) entries.nextElement();
-            String zipEntryName = entry.getName();
-            String unCodeString=new String(zipEntryName.getBytes("UTF-8"),"UTF-8");
+            synchronized (this) {
+                ZipEntry entry = (ZipEntry) entries.nextElement();
+                String zipEntryName = entry.getName();
+                String unCodeString = new String(zipEntryName.getBytes("UTF-8"), "UTF-8");
 
-            String[] temp = unCodeString.split("/");
+                String[] temp = unCodeString.split("/");
 
-            if (temp.length > 1) {
+                if (temp.length > 1) {
 
-                picName = temp[1];
-                String picNameAll = temp[1].substring(0, temp[1].length() - 4);
-                //stringList[0]为部门；picName为人员信息。
-                //判断人员信息中是否含有_,如果有，提取_前面的为名字，在判断是否含有-，如果有，则提取之间的为代号。
-                //将-后面的信息为员工ID
-                //人员姓名；
+                    picName = temp[1];
+                    String picNameAll = temp[1].substring(0, temp[1].length() - 4);
+                    //stringList[0]为部门；picName为人员信息。
+                    //判断人员信息中是否含有_,如果有，提取_前面的为名字，在判断是否含有-，如果有，则提取之间的为代号。
+                    //将-后面的信息为员工ID
+                    //人员姓名；
 
-                String realName;
-                //人员员工号;
-                String policNum;
-                //拼接的照片名称
-                String filePicName;
-                //判断插入的是否为已有人员
-                if (picNameAll.indexOf("_") != -1&&picNameAll.indexOf("-") != -1) {
-                    //picName1[0]为名字
-                    String[] picName1 = picName.split("_");
-                    realName = picName1[0];
-                    filePicName = "_" + picName1[1];
-                    //daihaoAndEmployleeId[0]为代号,1为员工ID
-                    String[] daihaoAndEmployleeId = picName1[1].split("-");
-                    //员工号
-                    policNum = daihaoAndEmployleeId[0];
-                } else if(picNameAll.indexOf("_") == -1&&picNameAll.indexOf("-") != -1){
-                    String[] picName1 = picName.split("-");
-                    realName = picName1[0];
-                    filePicName = "-"+picName1[1];
-                    policNum = " ";
-                }else if(picNameAll.indexOf("_") != -1&&picNameAll.indexOf("-") == -1){
-                    String[] picName1 = picName.split("_");
-                    realName = picName1[0];
-                    filePicName = "_"+picName1[1];
-                    policNum =picName1[1].substring(0, picName1[1].length() - 4);
-                }else{
-                    realName = picName.substring(0,picName.length()-4);
-                    filePicName = ".jpg";
-                    policNum =" ";
-                }
-                //判断插入的是否为已有人员
-                if (set.size() <= 0) {
-                    set.add(realName);
-                    num = num + 1;
-
-                } else {
-                    if (set.contains(realName)) {
-
+                    String realName;
+                    //人员员工号;
+                    String policNum;
+                    //拼接的照片名称
+                    String filePicName;
+                    //判断插入的是否为已有人员
+                    if (picNameAll.indexOf("_") != -1 && picNameAll.indexOf("-") != -1) {
+                        //picName1[0]为名字
+                        String[] picName1 = picName.split("_");
+                        realName = picName1[0];
+                        filePicName = "_" + picName1[1];
+                        //daihaoAndEmployleeId[0]为代号,1为员工ID
+                        String[] daihaoAndEmployleeId = picName1[1].split("-");
+                        //员工号
+                        policNum = daihaoAndEmployleeId[0];
+                    } else if (picNameAll.indexOf("_") == -1 && picNameAll.indexOf("-") != -1) {
+                        String[] picName1 = picName.split("-");
+                        realName = picName1[0];
+                        filePicName = "-" + picName1[1];
+                        policNum = " ";
+                    } else if (picNameAll.indexOf("_") != -1 && picNameAll.indexOf("-") == -1) {
+                        String[] picName1 = picName.split("_");
+                        realName = picName1[0];
+                        filePicName = "_" + picName1[1];
+                        policNum = picName1[1].substring(0, picName1[1].length() - 4);
                     } else {
+                        realName = picName.substring(0, picName.length() - 4);
+                        filePicName = ".jpg";
+                        policNum = " ";
+                    }
+                    //判断插入的是否为已有人员
+
+                    if (set.size() <= 0) {
                         set.add(realName);
                         num = num + 1;
 
-                    }
-                }
-                if(importUser.getType() == 0) {
-                    if (nameList.contains(realName)) {
-                        //人员已经进行了注册，根据人名查询该人的信息
-                        UserInfo uname=new UserInfo();
-                        uname.setRealName(realName);
-                        UserInfo u=this.userInfoService.queryForObject1(uname);
-                        SimplePicture simplePicture = new SimplePicture();
-                        simplePicture.setCollectId(u.getCollectId());
-                        Random random = new Random();
-                        String picturePath01 = path201 + (u.getCollectId()+"-"+random.nextInt(1000) + filePicName);
-                        String picturePath022 = (picturePath01).replace("\\", "/");
-                        simplePicture.setRelativePath(picturePath022);
-                        this.userInfoService.addSimplePicture(simplePicture);
-                        CsResult csResult=new CsResult();
-                        csResult.setPhotoId(simplePicture.getId());
-                        csResult.setPhotoCollectId(simplePicture.getCollectId());
-                        this.userInfoService.addcsresult1(csResult);
-                        InputStream in = zip.getInputStream(entry);
-                        String outPath = (path2 + "/" + picName).replaceAll("\\*", "/");
-                        //判断文件全路径是否为文件夹,如果是上面已经上传,不需要解压
-                        if (new File(outPath).isDirectory()) {
-                            continue;
+                    } else {
+                        if (set.contains(realName)) {
+
+                        } else {
+                            set.add(realName);
+                            num = num + 1;
+
                         }
-                        OutputStream out = new FileOutputStream(path2 + "/" + File.separator + (u.getCollectId()+"-"+random.nextInt(1000) + filePicName));
+                    }
+                    if (importUser.getType() == 0) {
+                        if (nameList.contains(realName)) {
+                            //人员已经进行了注册，根据人名查询该人的信息
+                            UserInfo uname = new UserInfo();
+                            uname.setRealName(realName);
+                            UserInfo u = this.userInfoService.queryForObject1(uname);
+                            SimplePicture simplePicture = new SimplePicture();
+                            simplePicture.setCollectId(u.getCollectId());
+                            Random random = new Random();
+                            String picturePath01 = path201 + (u.getCollectId() + "-" + random.nextInt(1000) + filePicName);
+                            String picturePath022 = (picturePath01).replace("\\", "/");
+                            simplePicture.setRelativePath(picturePath022);
+                            this.userInfoService.addSimplePicture(simplePicture);
+                            CsResult csResult = new CsResult();
+                            csResult.setPhotoId(simplePicture.getId());
+                            csResult.setPhotoCollectId(simplePicture.getCollectId());
+                            this.userInfoService.addcsresult1(csResult);
+                            InputStream in = zip.getInputStream(entry);
+                            String outPath = (path2 + "/" + picName).replaceAll("\\*", "/");
+                            //判断文件全路径是否为文件夹,如果是上面已经上传,不需要解压
+                            if (new File(outPath).isDirectory()) {
+                                continue;
+                            }
+                            OutputStream out = new FileOutputStream(path2 + "/" + File.separator + (u.getCollectId() + "-" + random.nextInt(1000) + filePicName));
+                            byte[] buf1 = new byte[1024];
+                            int len;
+                            while ((len = in.read(buf1)) > 0) {
+                                out.write(buf1, 0, len);
+                            }
+                            in.close();
+                            out.close();
+                        } else if (!nameList.contains(realName)) {
+                            //人员还没有进行注册
+                            nameList.add(realName);
+                            //准备添加用户信息
+                            UserInfo userInfo = new UserInfo();
+                            System.out.println("我是图片名称" + realName);
+                            userInfo.setRealName(realName);
+                            userInfo.setOrg(org.getOrgName());
+                            userInfo.setPoliceNum(policNum);
+                            userInfo.setCollectId(num);
+                            String uuid = UUID.randomUUID().toString();
+                            userInfo.setPicture(uuid);
+                            userInfo.setParentorg(org.getParentName());
+                            userInfo.setOrgId(String.valueOf(importUser.getOrgId()));
+                            userInfo.setAutoGraph(String.valueOf(importUser.getPlaceId()));
+                            //为证件照复制照片，准备添加用户照片信息
+                            String picturePath = path301 + (num + filePicName);
+                            String picturePath2 = (picturePath).replace("\\", "/");
+                            String picturePath3 = (path401 + (num + filePicName)).replace("\\", "/");
+                            setUserData(userInfo, picturePath2, picturePath3);
+                            String outUserPicuture = (path3 + "/" + picName).replaceAll("\\*", "/");
+                            //生成语音MP3
+                            // TextToSpeak textToSpeak=new TextToSpeak();
+                            //textToSpeak.textSpeak(realName,descDir+"VoicePlayback\\"+importUser.getOrgId() + "\\"+realName+".mp3");
+                            InputStream in1 = zip.getInputStream(entry);
+                            //OutputStream out1 = new FileOutputStream(outUserPicuture);
+                            OutputStream out1 = new FileOutputStream(path3 + "/" + File.separator + (num + filePicName));
+
+                            byte[] buf2 = new byte[1024];
+                            int len2;
+                            while ((len2 = in1.read(buf2)) > 0) {
+                                out1.write(buf2, 0, len2);
+                            }
+                            in1.close();
+                            out1.close();
+
+                            SimplePicture simplePicture = new SimplePicture();
+                            simplePicture.setCollectId(num);
+                            String picturePath01 = path201 + (num + filePicName);
+                            String picturePath022 = (picturePath01).replace("\\", "/");
+                            simplePicture.setRelativePath(picturePath022);
+                            this.userInfoService.addSimplePicture(simplePicture);
+                            CsResult csResult = new CsResult();
+                            csResult.setPhotoId(simplePicture.getId());
+                            csResult.setPhotoCollectId(simplePicture.getCollectId());
+                            this.userInfoService.addcsresult1(csResult);
+                            InputStream in = zip.getInputStream(entry);
+                            String outPath = (path2 + "/" + picName).replaceAll("\\*", "/");
+                            //判断文件全路径是否为文件夹,如果是上面已经上传,不需要解压
+                            if (new File(outPath).isDirectory()) {
+                                continue;
+                            }
+                            OutputStream out = new FileOutputStream(path2 + "/" + File.separator + (num + filePicName));
+                            byte[] buf1 = new byte[1024];
+                            int len;
+                            while ((len = in.read(buf1)) > 0) {
+                                out.write(buf1, 0, len);
+                            }
+                            in.close();
+                            out.close();
+                        }
+                    } else if (importUser.getType() == 1) {
+                        InputStream in = zip.getInputStream(entry);
+                        String outPath = (path2 + "/" + picNameAll + ".jpg").replaceAll("\\*", "/");
+                        //判断文件全路径是否为文件夹,如果是上面已经上传,不需要解压
+                        String picName1 = org.getId() + "/" + picNameAll + ".jpg";
+                        System.out.println("部门+图片名称:" + picName1);
+                        SimplePicture simpoid = this.userInfoService.queryForSimplePhotosByurlName(picName1);
+                        //更新这张图片的BeIsRegistered值为空
+                        this.userInfoService.updateBeIsRegisteredForSimplePhoto(simpoid);
+                        CsResult csResult = new CsResult();
+                        csResult.setPhotoId(simpoid.getId());
+                        csResult.setPhotoCollectId(simpoid.getCollectId());
+                        this.userInfoService.addcsresult1(csResult);
+                        OutputStream out = new FileOutputStream(outPath);
                         byte[] buf1 = new byte[1024];
                         int len;
                         while ((len = in.read(buf1)) > 0) {
@@ -317,95 +414,13 @@ public class UserController_Adds {
                         }
                         in.close();
                         out.close();
-                    } else if (!nameList.contains(realName)) {
-                        //人员还没有进行注册
-                        nameList.add(realName);
-                        //准备添加用户信息
-                        UserInfo userInfo = new UserInfo();
-                        System.out.println("我是图片名称"+realName);
-                        userInfo.setRealName(realName);
-                        userInfo.setOrg(org.getOrgName());
-                        userInfo.setPoliceNum(policNum);
-                        userInfo.setCollectId(num);
-                        String uuid = UUID.randomUUID().toString();
-                        userInfo.setPicture(uuid);
-                        userInfo.setParentorg(org.getParentName());
-                        userInfo.setOrgId(String.valueOf(importUser.getOrgId()));
-                        userInfo.setAutoGraph(String.valueOf(importUser.getPlaceId()));
-                        //为证件照复制照片，准备添加用户照片信息
-                        String picturePath = path301 + (num + filePicName);
-                        String picturePath2 = (picturePath).replace("\\", "/");
-                        String picturePath3=(path401+(num + filePicName)).replace("\\", "/");
-                        setUserData(userInfo, picturePath2,picturePath3);
-                        String outUserPicuture = (path3 + "/" + picName).replaceAll("\\*", "/");
-                        //生成语音MP3
-                       // TextToSpeak textToSpeak=new TextToSpeak();
-                        //textToSpeak.textSpeak(realName,descDir+"VoicePlayback\\"+importUser.getOrgId() + "\\"+realName+".mp3");
-                        InputStream in1 = zip.getInputStream(entry);
-                        //OutputStream out1 = new FileOutputStream(outUserPicuture);
-                        OutputStream out1 = new FileOutputStream(path3 + "/" + File.separator + (num + filePicName));
+                        //拼接字符串（部门+图片名称）
 
-                        byte[] buf2 = new byte[1024];
-                        int len2;
-                        while ((len2 = in1.read(buf2)) > 0) {
-                            out1.write(buf2, 0, len2);
-                        }
-                        in1.close();
-                        out1.close();
-
-                        SimplePicture simplePicture = new SimplePicture();
-                        simplePicture.setCollectId(num);
-                        String picturePath01 = path201 + (num + filePicName);
-                        String picturePath022 = (picturePath01).replace("\\", "/");
-                        simplePicture.setRelativePath(picturePath022);
-                        this.userInfoService.addSimplePicture(simplePicture);
-                        CsResult csResult=new CsResult();
-                        csResult.setPhotoId(simplePicture.getId());
-                        csResult.setPhotoCollectId(simplePicture.getCollectId());
-                        this.userInfoService.addcsresult1(csResult);
-                        InputStream in = zip.getInputStream(entry);
-                        String outPath = (path2 + "/" + picName).replaceAll("\\*", "/");
-                        //判断文件全路径是否为文件夹,如果是上面已经上传,不需要解压
-                        if (new File(outPath).isDirectory()) {
-                            continue;
-                        }
-                        OutputStream out = new FileOutputStream(path2 + "/" + File.separator + (num + filePicName));
-                        byte[] buf1 = new byte[1024];
-                        int len;
-                        while ((len = in.read(buf1)) > 0) {
-                            out.write(buf1, 0, len);
-                        }
-                        in.close();
-                        out.close();
                     }
-                }else if(importUser.getType()==1){
-                    InputStream in = zip.getInputStream(entry);
-                    String outPath = (path2 + "/" + picNameAll+".jpg").replaceAll("\\*", "/");
-                    //判断文件全路径是否为文件夹,如果是上面已经上传,不需要解压
-                    String picName1=org.getId()+"/"+picNameAll+".jpg";
-                    System.out.println("部门+图片名称:"+picName1);
-                    SimplePicture simpoid=this.userInfoService.queryForSimplePhotosByurlName(picName1);
-                    //更新这张图片的BeIsRegistered值为空
-                    this.userInfoService.updateBeIsRegisteredForSimplePhoto(simpoid);
-                    CsResult csResult=new CsResult();
-                    csResult.setPhotoId(simpoid.getId());
-                    csResult.setPhotoCollectId(simpoid.getCollectId());
-                    this.userInfoService.addcsresult1(csResult);
-                    OutputStream out = new FileOutputStream(outPath);
-                    byte[] buf1 = new byte[1024];
-                    int len;
-                    while ((len = in.read(buf1)) > 0) {
-                        out.write(buf1, 0, len);
-                    }
-                    in.close();
-                    out.close();
-                    //拼接字符串（部门+图片名称）
-
                 }
+
             }
-
         }
-
         zip.close();
         System.out.println("******************解压完毕********************");
         //删除临时数据
@@ -413,18 +428,7 @@ public class UserController_Adds {
 
     }
 
-    //将用户部门和考勤地点存为session
-    @RequestMapping(value = "/userSession", method = RequestMethod.POST)
-    public void getUserSession(@RequestBody Map<String, Object> map) {
-        String autoGraph = map.get("autoGraph").toString();
-        String orgid = map.get("orgId").toString();
-        String type = map.get("type").toString();
-        ImportUser importUser = new ImportUser();
-        importUser.setOrgId(Integer.parseInt(orgid));
-        importUser.setPlaceId(Integer.parseInt(autoGraph));
-        importUser.setType(Integer.parseInt(type));
-        this.userInfoService.ImportUserTemp(importUser);
-    }
+
 
     //插入人员信息和头像、样本照片数据数据
     private void setUserData(UserInfo userInfo, String picPath, String picPath1) {

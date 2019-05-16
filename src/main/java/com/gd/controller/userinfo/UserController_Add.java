@@ -31,8 +31,56 @@ public class UserController_Add {
     private IUserInfoService userInfoService;
     @Autowired
     private IOrgService orgService;
-
-    //更新版，为用户注册信息
+    //第一步,插入用户信息
+    @RequestMapping(value = "/userSession", method = RequestMethod.POST)
+    public  String getUserSession(@RequestBody Map<String, Object> map) {
+        Map<String, String> map1 = new HashMap<>();
+        Gson gson = new Gson();
+        String placId = map.get("autoGraph").toString();
+        String orgid = map.get("orgId").toString();
+        String org = map.get("org").toString();
+        String parentorg = map.get("parentorg").toString();
+        String name = map.get("realName").toString();
+        String employee = map.get("policeNum").toString();
+        UserInfo userInfo = new UserInfo();
+        userInfo.setOrgId(orgid);
+        userInfo.setRealName(name);
+        List<UserInfo> nameList = this.userInfoService.queryForName1(userInfo);
+        if (nameList.size() > 0) {
+            map1.put("data", "no");
+            return gson.toJson(map1);
+        } else {
+            ImportUser1 importUser = new ImportUser1();
+            importUser.setPlaceId(Integer.parseInt(placId));
+            importUser.setOrgId(Integer.parseInt(orgid));
+            importUser.setOrgName(org);
+            importUser.setParentOrgName(parentorg);
+            importUser.setName(name);
+            importUser.setEmployee(employee);
+            this.userInfoService.importUserTemp1(importUser);
+            //第一次查入用户信息
+            synchronized(this) {
+                Integer num = this.userInfoService.getSimplePhotoMax();
+                if (num == null) {
+                    num = 1;
+                }
+                UserInfo userInfo1 = new UserInfo();
+                userInfo1.setRealName(name);
+                userInfo1.setPicture(UUID.randomUUID().toString());
+                userInfo1.setParentorg(parentorg);
+                userInfo1.setPoliceNum(employee);
+                userInfo1.setAutoGraph(placId);
+                userInfo1.setCollectId(num + 1);
+                userInfo1.setOrg(org);
+                userInfo1.setOrgId(orgid);
+                userInfo1 = (UserInfo) BaseModelFieldSetUtils.FieldSet(userInfo1);
+                this.userInfoService.insertUser(userInfo1);
+            }
+            map1.put("data", "yes");
+            return gson.toJson(map1);
+        }
+    }
+    //第二步，为用户注册照片
     @RequestMapping(value = "/simpleUserPicImport", method = RequestMethod.POST)
     @ResponseBody
     public String simpleUserPicImport(HttpServletRequest request, HttpServletResponse response)
@@ -74,6 +122,7 @@ public class UserController_Add {
                 String path2 = rootPath1 + "SamplePhotos\\" + importUser1.getOrgId();
                 //证件照
                 String path3 = rootPath1 + "CertificatePhotos\\";
+                String path3_1=rootPath1+"CertificatePhotosFace\\";
                 //simple_photo根路径
                 String path201 = "SamplePhotos\\" + importUser1.getOrgId() + "\\";
                 //user_picture根路径
@@ -83,7 +132,7 @@ public class UserController_Add {
                // TextToSpeak textToSpeak=new TextToSpeak();
                 //textToSpeak.textSpeak(importUser1.getName(),rootPath1+"VoicePlayback\\"+importUser1.getOrgId() + "\\"+importUser1.getName()+".mp3");
                 if (zipFile != null) {
-                    int id = saveSimplePic(zipFile.getInputStream(), zipFile.getInputStream(), path2, path3, pictureBuildOk, path201, path301,path401, users);
+                    int id = saveSimplePic(zipFile.getInputStream(), zipFile.getInputStream(),zipFile.getInputStream(), path2, path3,path3_1, pictureBuildOk, path201, path301,path401, users);
                     Gson gson = new Gson();
                     return gson.toJson(id);
                 } else {
@@ -99,7 +148,7 @@ public class UserController_Add {
         return "";
     }
 
-    private int saveSimplePic(InputStream inputStream, InputStream inputStream2, String path2, String path3, String pictureName,
+    private int saveSimplePic(InputStream inputStream, InputStream inputStream2, InputStream inputStream3,String path2, String path3,String path3_1, String pictureName,
                               String path201, String path301, String path401,List<UserInfo> users) {
 
         OutputStream os = null;
@@ -153,37 +202,52 @@ public class UserController_Add {
             //如果存在了，则什么都不执行。否则插入样本照片
 
         } else {
-            saveUserPic(inputStream2, path3, pictureName);
+            saveUserPic(inputStream2,inputStream3, path3,path3_1,pictureName);
             String outPath1 = (path301 + pictureName + ".jpg").replace("\\", "/");
             String outPath2 = (path401 + pictureName + ".jpg").replace("\\", "/");
             userInfoPicture.setName(outPath1);
             userInfoPicture.setName2(outPath2);
             this.userInfoService.addPicture(userInfoPicture);
+
         }
         return simplePicture.getId();
 
     }
 
-    private void saveUserPic(InputStream inputStream, String path3, String pictureName) {
+    private void saveUserPic(InputStream inputStream,InputStream inputStream3,String path3, String path3_1,String pictureName) {
         OutputStream os1 = null;
+        OutputStream os2=null;
+
         try {
 
             // 2、保存到临时文件
             // 1K的数据缓冲
             byte[] bs1 = new byte[1024];
+            byte[] bs2=new byte[1024];
             // 读取到的数据长度
             int len1;
+            int len2;
             // 输出的文件流保存到本地文件
 
             File tempFile = new File(path3);
+            File tempFile2=new File(path3_1);
             if (!tempFile.exists()) {
                 tempFile.mkdirs();
             }
-            System.out.println();
+            if(!tempFile2.exists()) {
+                tempFile2.mkdirs();
+            }
             os1 = new FileOutputStream(tempFile.getPath() + File.separator + pictureName + ".jpg");
+
             // 开始读取
             while ((len1 = inputStream.read(bs1)) != -1) {
                 os1.write(bs1, 0, len1);
+            }
+            os2 = new FileOutputStream(tempFile2.getPath() + File.separator + pictureName + ".jpg");
+
+            // 开始读取
+            while ((len2 = inputStream3.read(bs2)) != -1) {
+                os2.write(bs2, 0, len2);
             }
 
         } catch (IOException e) {
@@ -194,62 +258,17 @@ public class UserController_Add {
             // 完毕，关闭所有链接
             try {
                 os1.close();
+                os2.close();
                 inputStream.close();
+                inputStream3.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+
     }
 
-    //插入证件照
-    @RequestMapping(value = "/userSession", method = RequestMethod.POST)
-    public  String getUserSession(@RequestBody Map<String, Object> map) {
-        Map<String, String> map1 = new HashMap<>();
-        Gson gson = new Gson();
-        String placId = map.get("autoGraph").toString();
-        String orgid = map.get("orgId").toString();
-        String org = map.get("org").toString();
-        String parentorg = map.get("parentorg").toString();
-        String name = map.get("realName").toString();
-        String employee = map.get("policeNum").toString();
-        UserInfo userInfo = new UserInfo();
-        userInfo.setOrgId(orgid);
-        userInfo.setRealName(name);
-        List<UserInfo> nameList = this.userInfoService.queryForName1(userInfo);
-        if (nameList.size() > 0) {
-            map1.put("data", "no");
-            return gson.toJson(map1);
-        } else {
-            ImportUser1 importUser = new ImportUser1();
-            importUser.setPlaceId(Integer.parseInt(placId));
-            importUser.setOrgId(Integer.parseInt(orgid));
-            importUser.setOrgName(org);
-            importUser.setParentOrgName(parentorg);
-            importUser.setName(name);
-            importUser.setEmployee(employee);
-            this.userInfoService.importUserTemp1(importUser);
-            //第一次查入用户信息
-            synchronized(this) {
-                Integer num = this.userInfoService.getSimplePhotoMax();
-                if (num == null) {
-                    num = 1;
-                }
-                UserInfo userInfo1 = new UserInfo();
-                userInfo1.setRealName(name);
-                userInfo1.setPicture(UUID.randomUUID().toString());
-                userInfo1.setParentorg(parentorg);
-                userInfo1.setPoliceNum(employee);
-                userInfo1.setAutoGraph(placId);
-                userInfo1.setCollectId(num + 1);
-                userInfo1.setOrg(org);
-                userInfo1.setOrgId(orgid);
-                userInfo1 = (UserInfo) BaseModelFieldSetUtils.FieldSet(userInfo1);
-                this.userInfoService.insertUser(userInfo1);
-            }
-            map1.put("data", "yes");
-            return gson.toJson(map1);
-        }
-    }
+
 
     @RequestMapping(value = "/deleteSession", method = RequestMethod.GET)
     public void deleteSession() {
