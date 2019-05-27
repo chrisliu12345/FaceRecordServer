@@ -30,6 +30,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 /**
  * Created by Administrator on 2017/12/19 0019.
@@ -46,43 +47,47 @@ public class ConfigController {
     /*String path1="E:/FrConfig/zhy_webclient/excelFile/file/";*/
     @Value("${excel.path2}")
     private String path2;
+
     //获取当前考勤信息
     @RequestMapping(method = RequestMethod.GET)
-    public String getConfig(){
-        List<ConfigSQL> config=this.configService.queryForObject();
-        Map<String,Object> map=new HashMap<>();
-        map.put("data",config);
-        Gson gson=new Gson();
+    public String getConfig() {
+        List<ConfigSQL> config = this.configService.queryForObject();
+        Map<String, Object> map = new HashMap<>();
+        map.put("data", config);
+        Gson gson = new Gson();
         return gson.toJson(map);
     }
+
     //更新考勤配置
     @RequestMapping(method = RequestMethod.POST)
-    public  String addConfig(@RequestBody Map<String,Object> map){
-            Config config=new Config();
-            config.setStartTime(map.get("StartTime").toString());
-            config.setEndTime(map.get("EndTime").toString());
-            config.setStartRestTime(map.get("StartRestTime").toString());
-            config.setEndRestTime(map.get("EndRestTime").toString());
-            config.setStartWrok(map.get("StartWrok").toString());
-            config.setEndWork(map.get("EndWork").toString());
-            config.setNoWork(map.get("NoWork").toString());
-            config.setSelected(map.get("Selected").toString());
-            config.setStartAddWorkTime(map.get("StartAddWorkTime").toString());
-            this.configService.updateConfig(config);
-            Map<String,String> map1=new HashMap<>();
-            map1.put("code","success");
-            Gson gson=new Gson();
-            return gson.toJson(map1);
+    public String addConfig(@RequestBody Map<String, Object> map) {
+        Config config = new Config();
+        config.setStartTime(map.get("StartTime").toString());
+        config.setEndTime(map.get("EndTime").toString());
+        config.setStartRestTime(map.get("StartRestTime").toString());
+        config.setEndRestTime(map.get("EndRestTime").toString());
+        config.setStartWrok(map.get("StartWrok").toString());
+        config.setEndWork(map.get("EndWork").toString());
+        config.setNoWork(map.get("NoWork").toString());
+        config.setSelected(map.get("Selected").toString());
+        config.setStartAddWorkTime(map.get("StartAddWorkTime").toString());
+        this.configService.updateConfig(config);
+        Map<String, String> map1 = new HashMap<>();
+        map1.put("code", "success");
+        Gson gson = new Gson();
+        return gson.toJson(map1);
     }
+
     //下载节假日表
     @RequestMapping(value = "/downloadFile")
     public void downloadMcode(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException {
 
         // String s1 = com.gd.controller.group.GroupController.class.getResource("/file/").getPath();
 
-        FileLoadUtils.fileDownLoad(response, path2+ URLEncoder.encode("法定节假日表.xlsx", "UTF-8"));
+        FileLoadUtils.fileDownLoad(response, path2 + URLEncoder.encode("法定节假日表.xlsx", "UTF-8"));
 
     }
+
     //导入节假日表
     @RequestMapping(value = "/import", method = RequestMethod.POST)
     @ResponseBody
@@ -141,7 +146,7 @@ public class ConfigController {
             System.out.println("我是读到的EXCEL" + file.getAbsolutePath());
             try {
                 fileContentList = ExcelUtils.readExcel(file.getAbsolutePath());
-                String num="";
+                String num = "";
                 for (int i = 0; i < fileContentList.size(); i++) {
                     if (i != fileContentList.size() - 1) {
                         String kk = fileContentList.get(i).get("0");
@@ -168,9 +173,9 @@ public class ConfigController {
                         num = num + sdate;
                     }
                 }
-                Config config=new Config();
+                Config config = new Config();
                 config.setRestDay(num);
-                String flag=this.configService.addConfig(config);
+                String flag = this.configService.addConfig(config);
 
                 file.delete();
 
@@ -189,195 +194,210 @@ public class ConfigController {
         }
         return null;
     }
-   //清除几个月前的数据
-    @RequestMapping(value = "/clean" ,method = RequestMethod.POST)
-    public String clean(@RequestBody String year){
+
+    //清除几个月前的数据
+    @RequestMapping(value = "/clean", method = RequestMethod.POST)
+    public String clean(@RequestBody String year) {
         /*ConfigData configData=new ConfigData();
         configData.setTimeoutClearingSetting(data);
         this.configService.cleanData(configData);*/
         this.configService.cleanAttendanceData(year);
-        Map<String,String> map=new HashMap<>();
-        map.put("code","success");
-        Gson gson=new Gson();
+        Map<String, String> map = new HashMap<>();
+        map.put("code", "success");
+        Gson gson = new Gson();
         return gson.toJson(map);
     }
+
     //显示当前设置的清除日期
     //清除几个月前的数据
-    @RequestMapping(value = "/cleanNow" ,method = RequestMethod.GET)
-    public String getclean(){
-        String clean=this.configService.getcleanData();
+    @RequestMapping(value = "/cleanNow", method = RequestMethod.GET)
+    public String getclean() {
+        String clean = this.configService.getcleanData();
 
-        Map<String,String> map=new HashMap<>();
-        map.put("data",clean);
-        Gson gson=new Gson();
+        Map<String, String> map = new HashMap<>();
+        map.put("data", clean);
+        Gson gson = new Gson();
         return gson.toJson(map);
     }
+
     //添加大屏显示文字
-    @RequestMapping(value="/addText",method = RequestMethod.POST)
-    public String addText(@RequestBody String num){
-        DisPlay disPlay=new DisPlay();
+    @RequestMapping(value = "/addText", method = RequestMethod.POST)
+    public String addText(@RequestBody String num) {
+        DisPlay disPlay = new DisPlay();
         disPlay.setDisplayContent(num);
         this.configService.addDisPlay(disPlay);
-        Map<String,Object> map=new HashMap<>();
-        map.put("data","success");
-        Gson gson=new Gson();
+        Map<String, Object> map = new HashMap<>();
+        map.put("data", "success");
+        Gson gson = new Gson();
         return gson.toJson(map);
 
     }
+
     //查询当前大屏显示文字
-    @RequestMapping(value="/getTextNow",method = RequestMethod.GET)
-    public String getTextNow(){
-        String value=this.configService.getDisPlayParam();
-        DisPlay disPlay=this.configService.getDisPlayNow(Integer.parseInt(value));
-        Map<String,Object> map=new HashMap<>();
-        map.put("data",disPlay);
-        Gson gson=new Gson();
+    @RequestMapping(value = "/getTextNow", method = RequestMethod.GET)
+    public String getTextNow() {
+        String value = this.configService.getDisPlayParam();
+        DisPlay disPlay = this.configService.getDisPlayNow(Integer.parseInt(value));
+        Map<String, Object> map = new HashMap<>();
+        map.put("data", disPlay);
+        Gson gson = new Gson();
         return gson.toJson(map);
 
     }
+
     //读取历史大屏显示数据
-    @RequestMapping(value="/getText",method = RequestMethod.GET)
-    public String getText(){
-        List<DisPlay> disPlayList=this.configService.getDisPlay();
-        Map<String,Object> map=new HashMap<>();
-        map.put("data",disPlayList);
-        Gson gson=new Gson();
+    @RequestMapping(value = "/getText", method = RequestMethod.GET)
+    public String getText() {
+        List<DisPlay> disPlayList = this.configService.getDisPlay();
+        Map<String, Object> map = new HashMap<>();
+        map.put("data", disPlayList);
+        Gson gson = new Gson();
         return gson.toJson(map);
 
     }
+
     //设置当前大屏显示界面
-    @RequestMapping(value="/addConfigText",method = RequestMethod.POST)
-    public String addConfigText(@RequestBody int num){
-        DisPlay disPlay=new DisPlay();
+    @RequestMapping(value = "/addConfigText", method = RequestMethod.POST)
+    public String addConfigText(@RequestBody int num) {
+        DisPlay disPlay = new DisPlay();
         disPlay.setContentId(num);
         this.configService.addConfigDisPlay(disPlay);
-        Map<String,Object> map=new HashMap<>();
-        map.put("data","success");
-        Gson gson=new Gson();
+        Map<String, Object> map = new HashMap<>();
+        map.put("data", "success");
+        Gson gson = new Gson();
         return gson.toJson(map);
 
     }
+
     //读取CS端大屏显示数据
-    @RequestMapping(value="/getCSText",method = RequestMethod.GET)
-    public String getCSText(){
-        List<CsConfig> csConfigs=this.configService.getCsText();
-        Map<String,Object> map=new HashMap<>();
-        map.put("data",csConfigs);
-        Gson gson=new Gson();
+    @RequestMapping(value = "/getCSText", method = RequestMethod.GET)
+    public String getCSText() {
+        List<CsConfig> csConfigs = this.configService.getCsText();
+        Map<String, Object> map = new HashMap<>();
+        map.put("data", csConfigs);
+        Gson gson = new Gson();
         return gson.toJson(map);
 
     }
+
     //设置CS大屏显示系统为
-    @RequestMapping(value="/addCSText",method = RequestMethod.POST)
-    public String addCSText(@RequestBody int i){
-        CsConfig csConfig=new CsConfig();
+    @RequestMapping(value = "/addCSText", method = RequestMethod.POST)
+    public String addCSText(@RequestBody int i) {
+        CsConfig csConfig = new CsConfig();
         csConfig.setPanelId(i);
-       this.configService.addCsText(csConfig);
-        Map<String,Object> map=new HashMap<>();
-        map.put("data","success");
-        Gson gson=new Gson();
+        this.configService.addCsText(csConfig);
+        Map<String, Object> map = new HashMap<>();
+        map.put("data", "success");
+        Gson gson = new Gson();
         return gson.toJson(map);
 
     }
+
     //查询当前CS端显示系统
-    @RequestMapping(value="/getCSTextNow",method = RequestMethod.GET)
-    public String getCSTextNow(){
-        String value=this.configService.getCsTextParam();
-        CsConfig csConfigs=this.configService.getCsTextNow(Integer.parseInt(value));
-        Map<String,Object> map=new HashMap<>();
-        map.put("data",csConfigs);
-        Gson gson=new Gson();
+    @RequestMapping(value = "/getCSTextNow", method = RequestMethod.GET)
+    public String getCSTextNow() {
+        String value = this.configService.getCsTextParam();
+        CsConfig csConfigs = this.configService.getCsTextNow(Integer.parseInt(value));
+        Map<String, Object> map = new HashMap<>();
+        map.put("data", csConfigs);
+        Gson gson = new Gson();
         return gson.toJson(map);
 
     }
+
     //为fr_cs_services设置默认摄像机ID,并返回给CS端
-    @RequestMapping(value="/addCamera1",method = RequestMethod.POST)
-    public String addCamera1(@RequestBody int i){
+    @RequestMapping(value = "/addCamera1", method = RequestMethod.POST)
+    public String addCamera1(@RequestBody int i) {
         //把当前摄像机ID存放到config表中
         this.configService.addCamera1(i);
         //根据摄像机ID查询serviceID
-        String serviceID=this.configService.queryForServicesId(i);
+        String serviceID = this.configService.queryForServicesId(i);
         //获取当前摄像机的ServiceIP
-        String serviceIP=this.configService.queryForServicesIpByid(Integer.parseInt(serviceID));
+        String serviceIP = this.configService.queryForServicesIpByid(Integer.parseInt(serviceID));
         //根据serviceID，在对应表中更新默认的CameraID
-        CsServers csServers=new CsServers();
+        CsServers csServers = new CsServers();
         csServers.setServiceId(Integer.parseInt(serviceID));
         csServers.setShowCameraID(i);
         this.configService.updateServiceCameraId(csServers);
 
-        Map<String,Object> map=new HashMap<>();
-        map.put("data1",serviceIP);
-        Gson gson=new Gson();
+        Map<String, Object> map = new HashMap<>();
+        map.put("data1", serviceIP);
+        Gson gson = new Gson();
         return gson.toJson(map);
 
     }
+
     //查询当前使用的摄像机
-    @RequestMapping(value="/getCameraNow",method = RequestMethod.GET)
-    public String getCameraNow(){
+    @RequestMapping(value = "/getCameraNow", method = RequestMethod.GET)
+    public String getCameraNow() {
         /*String value=this.configService.getCameraParam();*/
-        Camera camera=this.configService.getCameraNow(1);
+        Camera camera = this.configService.getCameraNow(1);
 
-        Map<String,Object> map=new HashMap<>();
-        map.put("data",camera);
-        Gson gson=new Gson();
+        Map<String, Object> map = new HashMap<>();
+        map.put("data", camera);
+        Gson gson = new Gson();
         return gson.toJson(map);
 
     }
+
     //添加考勤地点
-    @RequestMapping(value="/addCameraLocation",method = RequestMethod.POST)
-    public String addCameraLocation(@RequestBody String cam){
-        CameraLocation cameraLocation=new CameraLocation();
+    @RequestMapping(value = "/addCameraLocation", method = RequestMethod.POST)
+    public String addCameraLocation(@RequestBody String cam) {
+        CameraLocation cameraLocation = new CameraLocation();
         cameraLocation.setAttendanceLocationName(cam);
         //查询该地点是否已存在
-        Integer num=this.configService.selectCameraLocation(cameraLocation);
-        if(num>0){
-            Map<String,Object> map=new HashMap<>();
-            map.put("code","esit");
-            Gson gson=new Gson();
+        Integer num = this.configService.selectCameraLocation(cameraLocation);
+        if (num > 0) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("code", "esit");
+            Gson gson = new Gson();
             return gson.toJson(map);
-        }else{
+        } else {
             this.configService.addCameraLocation(cameraLocation);
-            Map<String,Object> map=new HashMap<>();
-            map.put("code","success");
-            Gson gson=new Gson();
+            Map<String, Object> map = new HashMap<>();
+            map.put("code", "success");
+            Gson gson = new Gson();
             return gson.toJson(map);
         }
 
 
     }
+
     //获取config的CollectNewResult的值
-    @RequestMapping(value="/CollectNewResult",method = RequestMethod.GET)
-    public String CollectNewResult(){
-        String value=this.configService.getCollectNewResult();
-        Map<String,Object> map=new HashMap<>();
-        map.put("code",value);
-        if(!value.equals("0")){
+    @RequestMapping(value = "/CollectNewResult", method = RequestMethod.GET)
+    public String CollectNewResult() {
+        String value = this.configService.getCollectNewResult();
+        Map<String, Object> map = new HashMap<>();
+        map.put("code", value);
+        if (!value.equals("0")) {
             //如果不是0，则将它置为0；
             this.configService.setCollectNewResult();
         }
-        Gson gson=new Gson();
+        Gson gson = new Gson();
         return gson.toJson(map);
 
     }
+
     //获取config的CollectNewResult的值
-    @RequestMapping(value="/checkName1",method = RequestMethod.POST)
-    public String checkName1(@RequestBody String id){
-        List<UserInfo> userInfos=this.configService.getNamesByOrgId(id);
-        UserInfo userInfo=new UserInfo();
+    @RequestMapping(value = "/checkName1", method = RequestMethod.POST)
+    public String checkName1(@RequestBody String id) {
+        List<UserInfo> userInfos = this.configService.getNamesByOrgId(id);
+        UserInfo userInfo = new UserInfo();
         userInfo.setCollectId(99999);
         userInfo.setRealName("全部人员");
         userInfos.add(userInfo);
         Collections.reverse(userInfos);
 
-        Map<String,Object> map=new HashMap<>();
-        map.put("data",userInfos);
-        Gson gson=new Gson();
+        Map<String, Object> map = new HashMap<>();
+        map.put("data", userInfos);
+        Gson gson = new Gson();
         return gson.toJson(map);
 
     }
+
     //导出考勤地点
-    @RequestMapping(value="/exportCameraLocation",method = RequestMethod.GET)
-    public void exportCameraLocation(HttpServletResponse res){
+    @RequestMapping(value = "/exportCameraLocation", method = RequestMethod.GET)
+    public void exportCameraLocation(HttpServletResponse res) {
         HSSFWorkbook wb = new HSSFWorkbook();
         HSSFSheet sheet = wb.createSheet("组织机构");
         sheet.autoSizeColumn(1);
@@ -395,19 +415,19 @@ public class ConfigController {
         HSSFCell encoder_channel1 = head.createCell(1);
         encoder_channel1.setCellValue("考勤地点ID");
         //组的树结构组装开始
-        List<CameraLocation> cameraLocationList=this.orgTreeService.queryForCameraLoaction();
-        for(int i=0;i<cameraLocationList.size();i++){
-            HSSFRow heads = sheet.createRow(i+1);
+        List<CameraLocation> cameraLocationList = this.orgTreeService.queryForCameraLoaction();
+        for (int i = 0; i < cameraLocationList.size(); i++) {
+            HSSFRow heads = sheet.createRow(i + 1);
             HSSFCell name = heads.createCell(0);
             name.setCellValue(cameraLocationList.get(i).getAttendanceLocationName());
             HSSFCell id = heads.createCell(1);
             id.setCellValue(cameraLocationList.get(i).getAttendanceLocationID());
         }
-        File path = new File( path2);
+        File path = new File(path2);
         if (!path.exists()) {
             path.mkdir();
         }
-        String path1 = path2+ File.separator + "下载测试文档" + ".xls";
+        String path1 = path2 + File.separator + "下载测试文档" + ".xls";
 
         try {
             FileOutputStream fileout = new FileOutputStream(path1);
@@ -435,79 +455,104 @@ public class ConfigController {
             ex.printStackTrace();
         }
     }
+
     //导出考勤数据
-    @RequestMapping(value="/downloadData",method = RequestMethod.POST)
-    public void downloadData(@RequestBody Map<String,String> map, HttpServletResponse res){
+    @RequestMapping(value = "/downloadData", method = RequestMethod.POST)
+    public void downloadData(@RequestBody Map<String, String> map, HttpServletResponse res) {
         HSSFWorkbook wb = new HSSFWorkbook();
         HSSFSheet sheet = wb.createSheet("考勤记录导出");
         //sheet.autoSizeColumn(1);
-        for (int i = 0; i <= 5; i++) {
-            sheet.setColumnWidth(i,3000);
+        for (int i = 0; i <= 18; i++) {
+            sheet.setColumnWidth(i, 3000);
         }
-
         HSSFCellStyle style = wb.createCellStyle();
         HSSFFont fontSearch = wb.createFont();
-        fontSearch.setFontHeightInPoints((short) 15);
+        fontSearch.setFontHeightInPoints((short) 18);
+        fontSearch.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
         style.setFont(fontSearch);
         style.setBorderBottom(HSSFCellStyle.BORDER_DOUBLE);
         style.setBorderLeft(HSSFCellStyle.BORDER_DOUBLE);
         style.setBorderRight(HSSFCellStyle.BORDER_DOUBLE);
         style.setBorderTop(HSSFCellStyle.BORDER_DOUBLE);
-        HSSFRow head = sheet.createRow(0);
-        HSSFCell encoder_group1 = head.createCell(0);
-        encoder_group1.setCellValue("所属部门");
-        HSSFCell encoder_name1 = head.createCell(1);
-        encoder_name1.setCellValue("人员姓名");
-        HSSFCell encoder_channel4 = head.createCell(2);
-        encoder_channel4.setCellValue("记录时间");
-        HSSFCell encoder_channel1 = head.createCell(3);
-        encoder_channel1.setCellValue("上班时间");
-        HSSFCell encoder_channel2 = head.createCell(4);
-        encoder_channel2.setCellValue("下班时间");
-       /* HSSFCell encoder_channel3 = head.createCell(4);
-        encoder_channel3.setCellValue("备注");
-       */
         //组的树结构组装开始
+        List<Record> dataList = this.configService.downLoadData(map);
+        SimpleDateFormat format = new SimpleDateFormat("HH:mm:ss");
+        //根据人员姓名对list进行分组
+        Map<String, List<Record>> col = dataList.stream().collect(Collectors.groupingBy(Record::getRealName));
+        //k:记录分组个数；j，p记录第一/第二大列组的行数；tmp，tmp1记录插入下一组的开始行位置；
+        int k = 0, j = 0, tmp = 0, p = 0,tmp1=0;
+        for (Map.Entry<String, List<Record>> maps : col.entrySet()) {
+            List<Record> rtnList = maps.getValue();
+            rtnList.add(new Record());
+            for (int i = 0; i < rtnList.size(); i++) {
 
-        List<Record> dataList=this.configService.downLoadData(map);
-        SimpleDateFormat format=new SimpleDateFormat("HH:mm:ss");
-       for(int i=0;i<dataList.size();i++){
-           System.out.println((i%4==0)&&(i/4)%2==0);
-            HSSFRow heads = sheet.createRow(i+1);
-           HSSFCell group = heads.createCell(0);
-           group.setCellValue(dataList.get(i).getOrg());
-            HSSFCell name = heads.createCell(1);
-            name.setCellValue(dataList.get(i).getRealName());
-           HSSFCell id4 = heads.createCell(2);
-           id4.setCellValue(dataList.get(i).getCreateTime().toString());
-            HSSFCell id = heads.createCell(3);
-            if(dataList.get(i).getClockIn()==null){
-                id.setCellValue(" ");
-            }else{
-                id.setCellValue(format.format(dataList.get(i).getClockIn().getTime()));
+                if (k % 2 == 0) {
+                    HSSFRow heads = sheet.createRow(i + tmp);
+                    HSSFCell group = heads.createCell(0);
+                    heads.createCell(7).setCellValue(" ");
+                    group.setCellValue(rtnList.get(i).getOrg());
+                    HSSFCell name = heads.createCell(1);
+                    heads.createCell(8).setCellValue(" ");
+                    name.setCellValue(rtnList.get(i).getRealName());
+                    HSSFCell id4 = heads.createCell(2);
+                    heads.createCell(9).setCellValue(" ");
+                    if(rtnList.get(i).getCreateTime()==null){
+                        id4.setCellValue(" ");
+                    }else{
+                        id4.setCellValue(rtnList.get(i).getCreateTime().toString());
+                    }
+                    HSSFCell id = heads.createCell(3);
+                    heads.createCell(10).setCellValue(" ");
+                    if (rtnList.get(i).getClockIn() == null) {
+                        id.setCellValue(" ");
+                    } else {
+                        id.setCellValue(format.format(rtnList.get(i).getClockIn().getTime()));
+                    }
+                    HSSFCell id2 = heads.createCell(4);
+                    heads.createCell(11).setCellValue(" ");
+                    if (rtnList.get(i).getClockOff() == null) {
+                        id2.setCellValue(" ");
+                    } else {
+                        id2.setCellValue(format.format(rtnList.get(i).getClockOff().getTime()));
+                    }
+                    j++;//第一次循环完判断J的值
+
+                }else{
+                    HSSFRow heads = sheet.getRow(i + tmp1);
+                    HSSFCell group = heads.getCell(7);
+                    group.setCellValue(rtnList.get(i).getOrg());
+                    HSSFCell name = heads.getCell(8);
+                    name.setCellValue(rtnList.get(i).getRealName());
+                    HSSFCell id4 = heads.getCell(9);
+                    if(rtnList.get(i).getCreateTime()==null){
+                        id4.setCellValue(" ");
+                    }else{
+                        id4.setCellValue(rtnList.get(i).getCreateTime().toString());
+                    }
+                    HSSFCell id = heads.getCell(10);
+                    if (rtnList.get(i).getClockIn() == null) {
+                        id.setCellValue(" ");
+                    } else {
+                        id.setCellValue(format.format(rtnList.get(i).getClockIn().getTime()));
+                    }
+                    HSSFCell id2 = heads.getCell(11);
+                    if (rtnList.get(i).getClockOff() == null) {
+                        id2.setCellValue(" ");
+                    } else {
+                        id2.setCellValue(format.format(rtnList.get(i).getClockOff().getTime()));
+                    }
+                    p++;
+                }
             }
-
-           HSSFCell id2 = heads.createCell(4);
-           if(dataList.get(i).getClockOff()==null){
-               id2.setCellValue(" ");
-           }else{
-             /*  id2.setCellValue(dataList.get(i).getClockOff().toString().substring(
-                       0,dataList.get(i).getClockOff().toString().length()-2));*/
-             id2.setCellValue(format.format(dataList.get(i).getClockOff().getTime()));
-           }
-          /* HSSFCell id3 = heads.createCell(4);
-          if(dataList.get(i).getAttendanceFlag()==null){
-              id3.setCellValue(" ");
-          }else{
-              id3.setCellValue(dataList.get(i).getAttendanceFlag());
-          }*/
-
+            tmp = j;
+            tmp1=p;
+            k++;
         }
-        File path = new File( path2);
+        File path = new File(path2);
         if (!path.exists()) {
             path.mkdir();
         }
-        String path1 = path2+ "考勤记录" + ".xls";
+        String path1 = path2 + "考勤记录" + ".xls";
         try {
             FileOutputStream fileout = new FileOutputStream(path1);
             wb.write(fileout);
