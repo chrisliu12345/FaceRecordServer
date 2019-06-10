@@ -210,8 +210,8 @@ public class ConfigServiceImpl implements IConfigService {
     }
 
     @Override
-    public void deleteUserTemp(Record record) {
-        this.configDao.deleteUserTemp(record);
+    public int deleteUserTemp(Record record) {
+         return this.configDao.deleteUserTemp(record);
     }
 
     @Override

@@ -76,7 +76,7 @@ public interface IConfigService {
 
     String getcleanData();
 
-    void deleteUserTemp(Record record);
+    int deleteUserTemp(Record record);
 
     List<Record> queryForRecordById(String id);
 

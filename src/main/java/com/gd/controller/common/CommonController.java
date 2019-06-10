@@ -14,6 +14,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -98,29 +99,38 @@ public class CommonController {
     }
 
     //删除人员考勤错误信息
-    @RequestMapping(value="/update/{id}",method = RequestMethod.GET)
-    public String deleteUserTemp(@PathVariable("id") String CollectId){
-        Calendar calendar=Calendar.getInstance();
+    @RequestMapping(value="/{dataTime}/{id}",method = RequestMethod.GET)
+    public String deleteUserTemp(@PathVariable("id") String CollectId,@PathVariable("dataTime") String dataTime){
+        /*Calendar calendar=Calendar.getInstance();
         calendar.add(Calendar.DATE,-1);
         Date date =calendar.getTime();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        String as=sdf.format(date);
+        String as=sdf.format(date);*/
             Random random=new Random();
             String mms=String.valueOf(random.nextInt(28));
             String sss=String.valueOf(random.nextInt(59));
             String mme=String.valueOf(random.nextInt(30));
             String sse=String.valueOf(random.nextInt(59));
-            String Clockon=as+" "+"08:"+mms+":"+sss;
-            String Clockoff=as+" "+"18:"+mme+":"+sse;
+            String Clockon=dataTime+" "+"08:"+mms+":"+sss;
+            String Clockoff=dataTime+" "+"18:"+mme+":"+sse;
             Timestamp con=Timestamp.valueOf(Clockon);
             Timestamp coff=Timestamp.valueOf(Clockoff);
             Record record=new Record();
             record.setClockIn(con);
             record.setClockOff(coff);
             record.setCollectId(Integer.parseInt(CollectId));
-            record.setCreateTime(new java.sql.Date(date.getTime()));
-            this.iConfigService.deleteUserTemp(record);
-        return "已更新"+as+"的记录";
+        /*    record.setCreateTime(new java.sql.Date(date.getTime()));*/
+           record.setCreateTime(Date.valueOf(dataTime));
+        try {
+            int a=this.iConfigService.deleteUserTemp(record);
+            if(a<1){
+                return "该天考勤还未出，请稍后再试。";
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+           return "false";
+        }
+        return "已更新"+dataTime+"的记录";
     }
 
 
